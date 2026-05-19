@@ -65,20 +65,23 @@
       "</h3><p class=\"sub\">סך הכל " +
       perfs.reduce(function (s, _, i) { return s + byPerf[i].length; }, 0) +
       " השתתפויות לאורך 6 ההצגות</p>" + cards + "</div>";
+    highlightTable(name);
   }
 
   function search() {
     var q = norm(input.value);
     suggestionsEl.innerHTML = "";
-    if (!q) { results.innerHTML = ""; showAllNames(); return; }
+    if (!q) { results.innerHTML = ""; highlightTable(null); showAllNames(); return; }
     var exact = allNames.filter(function (n) { return norm(n) === q; });
     if (exact.length === 1) { render(exact[0]); return; }
     var matches = allNames.filter(function (n) { return norm(n).indexOf(q) !== -1; });
     if (matches.length === 0) {
       results.innerHTML = '<div class="empty">לא נמצא שחקן תואם. בדקו את האיות.</div>';
+      highlightTable(null);
     } else if (matches.length === 1) {
       render(matches[0]);
     } else {
+      highlightTable(null);
       results.innerHTML = '<div class="empty">נמצאו כמה תוצאות — בחרו שם:</div>';
       suggestionsEl.innerHTML = matches.slice(0, 30).map(function (n) {
         return '<button data-name="' + esc(n) + '">' + esc(n) + "</button>";
@@ -90,6 +93,37 @@
     suggestionsEl.innerHTML = allNames.map(function (n) {
       return '<button data-name="' + esc(n) + '">' + esc(n) + "</button>";
     }).join("");
+  }
+
+  // ---- טבלת תפקידים מלאה (ללא קורוסים) ----
+  var tableEl = document.getElementById("castTable");
+  function buildTable() {
+    if (!tableEl) return;
+    var rolesOnly = (data.roles || []).filter(function (r) { return r.type !== "chorus"; });
+    var head = "<thead><tr><th>תפקיד</th>" + perfs.map(function (p, i) {
+      return "<th>הצגה " + (i + 1) + "<br><small>" + esc(p) + "</small></th>";
+    }).join("") + "</tr></thead>";
+    var bodyRows = rolesOnly.map(function (r) {
+      var cells = (r.actors || []).map(function (a) {
+        if (!a) return '<td class="muted">—</td>';
+        return '<td data-actor="' + esc(norm(a)) + '">' + esc(a) + "</td>";
+      }).join("");
+      return "<tr><td><strong>" + esc(r.role) + "</strong></td>" + cells + "</tr>";
+    }).join("");
+    tableEl.innerHTML = head + "<tbody>" + bodyRows + "</tbody>";
+  }
+
+  function highlightTable(name) {
+    if (!tableEl) return;
+    var target = name ? norm(name) : null;
+    var cells = tableEl.querySelectorAll("td[data-actor]");
+    for (var i = 0; i < cells.length; i++) {
+      if (target && cells[i].getAttribute("data-actor") === target) {
+        cells[i].classList.add("hl");
+      } else {
+        cells[i].classList.remove("hl");
+      }
+    }
   }
 
   if (input) {
@@ -106,6 +140,7 @@
     }
   });
 
+  buildTable();
   if (allNames.length) {
     showAllNames();
   } else {

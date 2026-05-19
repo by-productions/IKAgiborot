@@ -28,14 +28,6 @@
       return '<option value="' + p + '">הצגה ' + (i + 1) + " · " + p + "</option>";
     }).join("");
 
-  // סינון הדירוג לפי הצגה
-  var boardFilter = e("boardFilter");
-  boardFilter.innerHTML = '<option value="">כל ההצגות (סה"כ)</option>' +
-    perfs.map(function (p, i) {
-      return '<option value="' + p + '">הצגה ' + (i + 1) + " · " + p + "</option>";
-    }).join("");
-  boardFilter.addEventListener("change", loadAndRender);
-
   function notice(msg, type) {
     e("notice").innerHTML = '<div class="notice ' + type + '">' + msg + "</div>";
   }
@@ -59,8 +51,7 @@
   }
 
   function renderBoard(rows) {
-    var filter = boardFilter.value;
-    var filtered = filter ? rows.filter(function (r) { return r.performance === filter; }) : rows;
+    var filtered = rows;
 
     var totals = {};
     filtered.forEach(function (r) {
@@ -70,8 +61,7 @@
       .sort(function (a, b) { return b.qty - a.qty; });
     var board = e("scoreboard");
     if (!ranked.length) {
-      board.innerHTML = '<li class="empty">' +
-        (filter ? "אין מכירות להצגה זו עדיין." : "עדיין אין מכירות. היו הראשונים!") + "</li>";
+      board.innerHTML = '<li class="empty">עדיין אין מכירות. היו הראשונים!</li>';
     } else {
       board.innerHTML = ranked.map(function (r, i) {
         var cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
