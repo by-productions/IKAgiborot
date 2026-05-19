@@ -1,6 +1,7 @@
 (function () {
   var cfg = window.APP_CONFIG || {};
-  var data = window.CAST_DATA || { roles: [] };
+  var data = window.CAST_DATA || { roles: [], performances: [] };
+  var perfs = data.performances || [];
 
   var e = function (id) { return document.getElementById(id); };
   if (cfg.TICKETS_URL) e("ticketsBtn").href = cfg.TICKETS_URL;
@@ -21,6 +22,20 @@
     e("customNameWrap").style.display = sel.value === "__other__" ? "block" : "none";
   });
 
+  // בחירת הצגה בטופס
+  e("perfSelect").innerHTML = '<option value="">— בחר/י הצגה —</option>' +
+    perfs.map(function (p, i) {
+      return '<option value="' + p + '">הצגה ' + (i + 1) + " · " + p + "</option>";
+    }).join("");
+
+  // סינון הדירוג לפי הצגה
+  var boardFilter = e("boardFilter");
+  boardFilter.innerHTML = '<option value="">כל ההצגות (סה"כ)</option>' +
+    perfs.map(function (p, i) {
+      return '<option value="' + p + '">הצגה ' + (i + 1) + " · " + p + "</option>";
+    }).join("");
+  boardFilter.addEventListener("change", loadAndRender);
+
   function notice(msg, type) {
     e("notice").innerHTML = '<div class="notice ' + type + '">' + msg + "</div>";
   }
@@ -33,27 +48,31 @@
     supa = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
   }
 
-  // ---- מצב הדגמה (localStorage) כשאין Supabase ----
   var LS_KEY = "ticket_sales_demo";
   function demoGet() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch (_) { return []; } }
   function demoAdd(rec) { var a = demoGet(); a.push(rec); localStorage.setItem(LS_KEY, JSON.stringify(a)); }
 
   function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
 
   function renderBoard(rows) {
+    var filter = boardFilter.value;
+    var filtered = filter ? rows.filter(function (r) { return r.performance === filter; }) : rows;
+
     var totals = {};
-    rows.forEach(function (r) {
+    filtered.forEach(function (r) {
       totals[r.actor_name] = (totals[r.actor_name] || 0) + Number(r.qty || 0);
     });
     var ranked = Object.keys(totals).map(function (k) { return { name: k, qty: totals[k] }; })
       .sort(function (a, b) { return b.qty - a.qty; });
     var board = e("scoreboard");
-    if (!ranked.length) { board.innerHTML = '<li class="empty">עדיין אין מכירות. היו הראשונים!</li>'; }
-    else {
+    if (!ranked.length) {
+      board.innerHTML = '<li class="empty">' +
+        (filter ? "אין מכירות להצגה זו עדיין." : "עדיין אין מכירות. היו הראשונים!") + "</li>";
+    } else {
       board.innerHTML = ranked.map(function (r, i) {
         var cls = i === 0 ? "gold" : i === 1 ? "silver" : i === 2 ? "bronze" : "";
         var medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1);
@@ -63,14 +82,16 @@
           '<span class="count">' + r.qty + ' <small>כרטיסים</small></span></li>';
       }).join("");
     }
-    var log = rows.slice().sort(function (a, b) {
+    var log = filtered.slice().sort(function (a, b) {
       return new Date(b.created_at || 0) - new Date(a.created_at || 0);
     }).slice(0, 40);
     e("log").innerHTML = log.length
       ? '<h4 style="margin:14px 0 8px;color:var(--purple-dark)">מכירות אחרונות</h4>' +
         log.map(function (r) {
+          var perf = r.performance ? ' · <span class="buyer">' + esc(r.performance) + "</span>" : "";
           return '<div class="item"><span><strong>' + esc(r.actor_name) + "</strong> · " +
-            r.qty + ' כרטיסים</span><span class="buyer">רוכש: ' + esc(r.buyer_name) + "</span></div>";
+            r.qty + " כרטיסים" + perf + '</span><span class="buyer">רוכש: ' +
+            esc(r.buyer_name) + "</span></div>";
         }).join("")
       : "";
   }
@@ -93,35 +114,42 @@
   e("saleForm").addEventListener("submit", function (ev) {
     ev.preventDefault();
     var actor = sel.value === "__other__" ? e("actorCustom").value.trim() : sel.value;
+    var perf = e("perfSelect").value;
     var buyer = e("buyerName").value.trim();
     var qty = parseInt(e("qty").value, 10);
     if (!actor) { notice("בחר/י את השם שלך.", "err"); return; }
+    if (!perf) { notice("בחר/י לאיזו הצגה נרכשו הכרטיסים.", "err"); return; }
     if (!buyer) { notice("יש להזין שם מלא של רוכש הכרטיס.", "err"); return; }
     if (!qty || qty < 1) { notice("כמות כרטיסים לא תקינה.", "err"); return; }
 
-    var rec = { actor_name: actor, buyer_name: buyer, qty: qty, created_at: new Date().toISOString() };
+    var rec = {
+      actor_name: actor, buyer_name: buyer, qty: qty,
+      performance: perf, created_at: new Date().toISOString()
+    };
 
-    if (supa) {
-      supa.from("ticket_sales").insert([{ actor_name: actor, buyer_name: buyer, qty: qty }])
-        .then(function (res) {
-          if (res.error) { notice("שמירה נכשלה: " + res.error.message, "err"); return; }
-          notice("נוסף! " + esc(actor) + " מכר/ה " + qty + " כרטיסים ל" + esc(buyer) + ".", "ok");
-          e("saleForm").reset();
-          e("customNameWrap").style.display = "none";
-          loadAndRender();
-        });
-    } else {
-      demoAdd(rec);
-      notice("נוסף (מצב הדגמה)! " + esc(actor) + " · " + qty + " כרטיסים.", "ok");
+    function done() {
+      notice("נוסף! " + esc(actor) + " · " + qty + " כרטיסים ל" + esc(buyer) +
+        " (" + esc(perf) + ").", "ok");
       e("saleForm").reset();
       e("customNameWrap").style.display = "none";
       loadAndRender();
+    }
+
+    if (supa) {
+      supa.from("ticket_sales")
+        .insert([{ actor_name: actor, buyer_name: buyer, qty: qty, performance: perf }])
+        .then(function (res) {
+          if (res.error) { notice("שמירה נכשלה: " + res.error.message, "err"); return; }
+          done();
+        });
+    } else {
+      demoAdd(rec);
+      done();
     }
   });
 
   loadAndRender();
 
-  // עדכון בזמן אמת
   if (supa) {
     supa.channel("ticket_sales_rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "ticket_sales" }, loadAndRender)
