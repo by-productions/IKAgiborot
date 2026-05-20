@@ -1,4 +1,4 @@
-(function () {
+window.loadCastData(function () {
   var cfg = window.APP_CONFIG || {};
   var data = window.CAST_DATA || { roles: [], performances: [] };
   var perfs = data.performances || [];
@@ -145,4 +145,4 @@
       .on("postgres_changes", { event: "*", schema: "public", table: "ticket_sales" }, loadAndRender)
       .subscribe();
   }
-})();
+});

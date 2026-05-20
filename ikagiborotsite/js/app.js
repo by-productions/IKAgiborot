@@ -1,4 +1,4 @@
-(function () {
+window.loadCastData(function () {
   var cfg = window.APP_CONFIG || {};
   var data = window.CAST_DATA || { performances: [], roles: [] };
   var perfs = data.performances || [];
@@ -146,4 +146,4 @@
   } else {
     results.innerHTML = '<div class="empty">נתוני הקאסט עדיין לא הוזנו.</div>';
   }
-})();
+});

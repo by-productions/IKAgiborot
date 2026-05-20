@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ניהול קאסט · גיבורות מהאגדות</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .drop {
+      border: 3px dashed #c5b1e0;
+      border-radius: 18px;
+      padding: 28px;
+      text-align: center;
+      background: #faf7ff;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .drop.over { border-color: var(--purple); background: #f3ecfb; }
+    .drop input { display: none; }
+    .preview-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: .92rem; }
+    .preview-table th, .preview-table td { padding: 8px 10px; border-bottom: 1px solid #eee5f6; text-align: right; }
+    .preview-table th { background: #f3ecfb; color: var(--purple-dark); font-weight: 800; }
+    .stat { display: inline-block; background: var(--yellow); color: var(--purple-dark); font-weight:900; padding: 4px 12px; border-radius: 999px; margin-inline-end: 8px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="container">
+      <div class="brand">
+        <img src="assets/logo.png" alt="" onerror="this.style.display='none'" />
+        <span>ניהול קאסט</span>
+      </div>
+      <nav class="nav">
+        <a href="index.html">חזרה לאתר</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="container">
+    <section class="section">
+      <h2>עדכון קאסט מקובץ Excel</h2>
+      <p class="sub">העלי את קובץ ה-xlsx — האתר יתעדכן מיד לכל השחקנים בלי דחיפה ל-GitHub.</p>
+
+      <div class="card">
+        <div class="form-grid" style="margin-bottom:16px">
+          <div>
+            <label for="adminPw">סיסמת ניהול</label>
+            <input type="password" id="adminPw" placeholder="הסיסמה שהגדרת ב-Supabase" />
+          </div>
+        </div>
+
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".xlsx,.xls" />
+          <div style="font-size: 2rem;">📥</div>
+          <div style="font-weight:800;margin:6px 0">גררי לכאן קובץ Excel או לחצי לבחירה</div>
+          <div class="sub" style="margin:0">הפורמט: עמודה ראשונה = שם דמות/קטע, ואז 6 עמודות לכל הצגה</div>
+        </label>
+
+        <div id="notice"></div>
+
+        <div id="previewArea" style="display:none;margin-top:18px">
+          <div style="margin-bottom:10px">
+            <span class="stat" id="statRoles">0 תפקידים</span>
+            <span class="stat" id="statChorus">0 קורוסים</span>
+            <span class="stat" id="statActors">0 שחקנים</span>
+            <span class="stat" id="statPerfs">0 הצגות</span>
+          </div>
+          <div style="overflow-x:auto;max-height:340px;overflow-y:auto">
+            <table class="preview-table" id="preview"></table>
+          </div>
+          <button type="button" class="btn btn-primary" id="saveBtn" style="margin-top:14px">💾 שמירה ועדכון האתר</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <a href="index.html">חזרה לאתר הראשי</a>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
