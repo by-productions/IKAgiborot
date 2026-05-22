@@ -48,7 +48,7 @@ window.loadCastData(function () {
       var roles = byPerf[pi];
       var body;
       if (!roles.length) {
-        body = '<div class="empty" style="padding:10px">לא משתתף/ת בהצגה זו</div>';
+        body = '<div class="empty" style="padding:10px">משתתף/ת בהצגה זו בקאסטים הכללים</div>';
       } else {
         body = '<table class="role-table"><tbody>' + roles.map(function (r) {
           var tag = r.type === "chorus"
